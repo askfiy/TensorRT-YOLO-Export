@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 import shutil
 import subprocess
 
@@ -7,7 +7,7 @@ from onnx import TensorProto,  shape_inference
 from ultralytics import YOLO
 
 # ============================================================
-# 配置
+# 閰嶇疆
 # ============================================================
 MODEL_DIR = Path("./models").absolute()
 ONNX_DIR = MODEL_DIR / "onnx"
@@ -26,7 +26,7 @@ IOU_THRES = 0.45
 
 
 # ============================================================
-# 基础工具
+# 鍩虹宸ュ叿
 # ============================================================
 def latest_file(directory: Path, pattern: str, exclude_suffixes: tuple[str, ...] = ()) -> Path:
     candidates = [
@@ -34,27 +34,27 @@ def latest_file(directory: Path, pattern: str, exclude_suffixes: tuple[str, ...]
         if p.is_file() and not any(p.stem.endswith(suffix) for suffix in exclude_suffixes)
     ]
     if not candidates:
-        raise FileNotFoundError(f"未找到 {pattern} 文件: {directory}")
+        raise FileNotFoundError(f"鏈壘鍒?{pattern} 鏂囦欢: {directory}")
     return max(candidates, key=lambda p: p.stat().st_mtime)
 
 
 def ask_mode() -> str:
-    print("选择导出路径：")
-    print("1. 从最新 PT 开始导出")
-    print("2. 从现有 ONNX 开始转换")
-    choice = input("请输入 1 或 2: ").strip()
+    print("閫夋嫨瀵煎嚭璺緞锛?)
+    print("1. 浠庢渶鏂?PT 寮€濮嬪鍑?)
+    print("2. 浠庣幇鏈?ONNX 寮€濮嬭浆鎹?)
+    choice = input("璇疯緭鍏?1 鎴?2: ").strip()
     if choice not in {"1", "2"}:
-        raise ValueError("无效选择，只能输入 1 或 2。")
+        raise ValueError("鏃犳晥閫夋嫨锛屽彧鑳借緭鍏?1 鎴?2銆?)
     return choice
 
 
 def ask_is_e2e() -> bool:
-    choice = input("是否为 e2e 模型？(y/N): ").strip().lower()
+    choice = input("鏄惁涓?e2e 妯″瀷锛?y/N): ").strip().lower()
     return choice in {"y", "yes"}
 
 
 # ============================================================
-# ONNX 修补：补 output 的 shape / dtype
+# ONNX 淇ˉ锛氳ˉ output 鐨?shape / dtype
 # ============================================================
 def _copy_shape(src_tensor_type, dst_tensor_type) -> bool:
     if not src_tensor_type.HasField("shape"):
@@ -125,17 +125,17 @@ def patch_onnx_metadata(onnx_path: Path) -> Path:
     del model.graph.output[:]
     model.graph.output.extend(new_outputs)
     onnx.save(model, str(patched_path))
-    print(f"✅ 已修补 ONNX 输出元信息: {patched_path}")
+    print(f"鉁?宸蹭慨琛?ONNX 杈撳嚭鍏冧俊鎭? {patched_path}")
     return patched_path
 
 
 # ============================================================
-# PT -> 普通 ONNX
+# PT -> 鏅€?ONNX
 # ============================================================
 def export_plain_onnx(pt_path: Path) -> Path:
     ONNX_DIR.mkdir(parents=True, exist_ok=True)
 
-    print(f"\n[1/2] 正在导出普通 ONNX...\n模型: {pt_path}")
+    print(f"\n[1/2] 姝ｅ湪瀵煎嚭鏅€?ONNX...\n妯″瀷: {pt_path}")
     model = YOLO(str(pt_path))
 
     model.export(
@@ -150,19 +150,19 @@ def export_plain_onnx(pt_path: Path) -> Path:
 
     default_output = pt_path.with_suffix(".onnx")
     if not default_output.exists():
-        raise FileNotFoundError(f"未找到 Ultralytics 导出的 ONNX: {default_output}")
+        raise FileNotFoundError(f"鏈壘鍒?Ultralytics 瀵煎嚭鐨?ONNX: {default_output}")
 
     output_path = ONNX_DIR / f"{pt_path.stem}.onnx"
     if output_path.exists():
         output_path.unlink()
 
     shutil.move(str(default_output), str(output_path))
-    print(f"✅ 普通 ONNX 导出完成: {output_path}")
+    print(f"鉁?鏅€?ONNX 瀵煎嚭瀹屾垚: {output_path}")
     return output_path
 
 
 # ============================================================
-# 普通 ONNX -> TRT-YOLO ONNX
+# 鏅€?ONNX -> TRT-YOLO ONNX
 # ============================================================
 def export_trtyolo_onnx(onnx_path: Path, is_e2e: bool) -> Path:
     TRT_ONNX_DIR.mkdir(parents=True, exist_ok=True)
@@ -172,7 +172,7 @@ def export_trtyolo_onnx(onnx_path: Path, is_e2e: bool) -> Path:
     if output_path.exists():
         output_path.unlink()
 
-    print(f"\n正在转换 TRT-YOLO ONNX...\n模型: {fixed_onnx_path}")
+    print(f"\n姝ｅ湪杞崲 TRT-YOLO ONNX...\n妯″瀷: {fixed_onnx_path}")
     export_cmd = [
         "trtyolo-export",
         "-i",
@@ -183,7 +183,6 @@ def export_trtyolo_onnx(onnx_path: Path, is_e2e: bool) -> Path:
         str(MAX_DETS),
         "--conf-thres",
         str(CONF_THRES),
-        "-s",
     ]
 
     if not is_e2e:
@@ -197,16 +196,16 @@ def export_trtyolo_onnx(onnx_path: Path, is_e2e: bool) -> Path:
     try:
         subprocess.run(export_cmd, check=True)
     except FileNotFoundError:
-        raise FileNotFoundError("找不到 trtyolo-export，请确认它已安装并在 PATH 中。")
+        raise FileNotFoundError("鎵句笉鍒?trtyolo-export锛岃纭瀹冨凡瀹夎骞跺湪 PATH 涓€?)
     except subprocess.CalledProcessError as exc:
-        raise RuntimeError(f"trtyolo-export 转换失败，退出码: {exc.returncode}") from exc
+        raise RuntimeError(f"trtyolo-export 杞崲澶辫触锛岄€€鍑虹爜: {exc.returncode}") from exc
 
-    print(f"✅ TRT-YOLO ONNX 转换完成: {output_path}")
+    print(f"鉁?TRT-YOLO ONNX 杞崲瀹屾垚: {output_path}")
     return output_path
 
 
 # ============================================================
-# 主流程
+# 涓绘祦绋?
 # ============================================================
 def main() -> None:
     mode = ask_mode()
@@ -217,8 +216,8 @@ def main() -> None:
         plain_onnx = export_plain_onnx(pt_path)
         trt_onnx = export_trtyolo_onnx(plain_onnx, is_e2e)
 
-        print("\n全部完成：")
-        print(f"普通 ONNX: {plain_onnx}")
+        print("\n鍏ㄩ儴瀹屾垚锛?)
+        print(f"鏅€?ONNX: {plain_onnx}")
         print(f"TRT-YOLO ONNX: {trt_onnx}")
         return
 
@@ -229,7 +228,7 @@ def main() -> None:
     )
     trt_onnx = export_trtyolo_onnx(onnx_path, is_e2e)
 
-    print("\n全部完成：")
+    print("\n鍏ㄩ儴瀹屾垚锛?)
     print(f"TRT-YOLO ONNX: {trt_onnx}")
 
 
@@ -237,4 +236,5 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as exc:
-        print(f"\n导出失败: {exc}")
+        print(f"\n瀵煎嚭澶辫触: {exc}")
+
